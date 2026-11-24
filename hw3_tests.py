@@ -180,30 +180,292 @@ class TestCases(unittest.TestCase):
 
     # Part 1
     # test population_total
+    def test_population_total_known_counties(self):
+        self.assertEqual(hw3.population_total(self.counties), 4000)
+        self.assertEqual(hw3.population_total([self.first]), 1000)
 
-    # Part 2
-    # test filter_by_state
+    def test_population_total_empty(self):
+        self.assertEqual(hw3.population_total([]), 0)
+    # Part 2: filter_by_state
 
-    # Part 3
-    # test population_by_education
-    # test population_by_ethnicity
-    # test population_below_poverty_level
+    def test_filter_by_state_matches(self):
+        result = hw3.filter_by_state(self.counties, "CA")
+        self.assertEqual(result, [self.first])
+        self.assertIs(result[0], self.first)
 
-    # Part 4
-    # test percent_by_education
-    # test percent_by_ethnicity
-    # test percent_below_poverty_level
+        self.assertEqual(
+            hw3.filter_by_state(self.counties, "NY"),
+            [self.second]
+        )
 
-    # Part 5
-    # test education_greater_than
-    # test education_less_than
-    # test ethnicity_greater_than
-    # test ethnicity_less_than
-    # test below_poverty_level_greater_than
-    # test below_poverty_level_less_than
+    def test_filter_by_state_no_match_or_empty(self):
+        self.assertEqual(hw3.filter_by_state(self.counties, "TX"), [])
+        self.assertEqual(hw3.filter_by_state([], "CA"), [])
+
+    # Part 3: population estimates
+
+    def test_population_by_education_known_values(self):
+        # 1000 * 10% + 3000 * 30% = 1000 people.
+        self.assertAlmostEqual(
+            hw3.population_by_education(self.counties, EDUCATION),
+            1000.0
+        )
+        self.assertAlmostEqual(
+            hw3.population_by_education([self.first], EDUCATION),
+            100.0
+        )
+
+    def test_population_by_education_missing_or_empty(self):
+        self.assertEqual(
+            hw3.population_by_education(self.counties, "missing"),
+            0.0
+        )
+        self.assertEqual(
+            hw3.population_by_education([], EDUCATION),
+            0.0
+        )
+
+    def test_population_by_ethnicity_known_values(self):
+        # 1000 * 20% + 3000 * 60% = 2000 people.
+        self.assertAlmostEqual(
+            hw3.population_by_ethnicity(self.counties, ETHNICITY),
+            2000.0
+        )
+        self.assertAlmostEqual(
+            hw3.population_by_ethnicity([self.first], ETHNICITY),
+            200.0
+        )
+
+    def test_population_by_ethnicity_missing_or_empty(self):
+        self.assertEqual(
+            hw3.population_by_ethnicity(self.counties, "missing"),
+            0.0
+        )
+        self.assertEqual(
+            hw3.population_by_ethnicity([], ETHNICITY),
+            0.0
+        )
+
+    def test_population_below_poverty_level_known_values(self):
+        self.assertAlmostEqual(
+            hw3.population_below_poverty_level(self.counties),
+            1000.0
+        )
+
+    def test_population_below_poverty_level_single_or_empty(self):
+        self.assertAlmostEqual(
+            hw3.population_below_poverty_level([self.first]),
+            100.0
+        )
+        self.assertEqual(
+            hw3.population_below_poverty_level([]),
+            0.0
+        )
+
+    # Part 4: population-weighted percentages
+
+    def test_percent_by_education_weighted(self):
+        # 1000 / 4000 * 100 = 25%, not an unweighted 20%.
+        self.assertAlmostEqual(
+            hw3.percent_by_education(self.counties, EDUCATION),
+            25.0
+        )
+        self.assertAlmostEqual(
+            hw3.percent_by_education([self.first], EDUCATION),
+            10.0
+        )
+
+    def test_percent_by_education_missing_empty_or_zero(self):
+        self.assertEqual(
+            hw3.percent_by_education(self.counties, "missing"),
+            0.0
+        )
+        self.assertEqual(
+            hw3.percent_by_education([], EDUCATION),
+            0.0
+        )
+        self.assertEqual(
+            hw3.percent_by_education([self.zero], EDUCATION),
+            0.0
+        )
+
+    def test_percent_by_ethnicity_weighted(self):
+        self.assertAlmostEqual(
+            hw3.percent_by_ethnicity(self.counties, ETHNICITY),
+            50.0
+        )
+        self.assertAlmostEqual(
+            hw3.percent_by_ethnicity([self.first], ETHNICITY),
+            20.0
+        )
+
+    def test_percent_by_ethnicity_missing_empty_or_zero(self):
+        self.assertEqual(
+            hw3.percent_by_ethnicity(self.counties, "missing"),
+            0.0
+        )
+        self.assertEqual(
+            hw3.percent_by_ethnicity([], ETHNICITY),
+            0.0
+        )
+        self.assertEqual(
+            hw3.percent_by_ethnicity([self.zero], ETHNICITY),
+            0.0
+        )
+
+    def test_percent_below_poverty_level_weighted(self):
+        self.assertAlmostEqual(
+            hw3.percent_below_poverty_level(self.counties),
+            25.0
+        )
+
+    def test_percent_below_poverty_level_single_empty_or_zero(self):
+        self.assertAlmostEqual(
+            hw3.percent_below_poverty_level([self.first]),
+            10.0
+        )
+        self.assertEqual(
+            hw3.percent_below_poverty_level([]),
+            0.0
+        )
+        self.assertEqual(
+            hw3.percent_below_poverty_level([self.zero]),
+            0.0
+        )
+
+    # Part 5: strict demographic thresholds
+
+    def test_education_greater_than_matches(self):
+        self.assertEqual(
+            hw3.education_greater_than(self.counties, EDUCATION, 20.0),
+            [self.second]
+        )
+
+    def test_education_greater_than_boundary_missing_or_empty(self):
+        self.assertEqual(
+            hw3.education_greater_than(self.counties, EDUCATION, 30.0),
+            []
+        )
+        self.assertEqual(
+            hw3.education_greater_than(self.counties, "missing", -1.0),
+            []
+        )
+        self.assertEqual(
+            hw3.education_greater_than([], EDUCATION, 20.0),
+            []
+        )
+
+    def test_education_less_than_matches(self):
+        self.assertEqual(
+            hw3.education_less_than(self.counties, EDUCATION, 20.0),
+            [self.first]
+        )
+
+    def test_education_less_than_boundary_missing_or_empty(self):
+        self.assertEqual(
+            hw3.education_less_than(self.counties, EDUCATION, 10.0),
+            []
+        )
+        self.assertEqual(
+            hw3.education_less_than(self.counties, "missing", 100.0),
+            []
+        )
+        self.assertEqual(
+            hw3.education_less_than([], EDUCATION, 20.0),
+            []
+        )
+
+    def test_ethnicity_greater_than_matches(self):
+        self.assertEqual(
+            hw3.ethnicity_greater_than(self.counties, ETHNICITY, 40.0),
+            [self.second]
+        )
+
+    def test_ethnicity_greater_than_boundary_missing_or_empty(self):
+        self.assertEqual(
+            hw3.ethnicity_greater_than(self.counties, ETHNICITY, 60.0),
+            []
+        )
+        self.assertEqual(
+            hw3.ethnicity_greater_than(self.counties, "missing", -1.0),
+            []
+        )
+        self.assertEqual(
+            hw3.ethnicity_greater_than([], ETHNICITY, 40.0),
+            []
+        )
+
+    def test_ethnicity_less_than_matches(self):
+        self.assertEqual(
+            hw3.ethnicity_less_than(self.counties, ETHNICITY, 40.0),
+            [self.first]
+        )
+
+    def test_ethnicity_less_than_boundary_missing_or_empty(self):
+        self.assertEqual(
+            hw3.ethnicity_less_than(self.counties, ETHNICITY, 20.0),
+            []
+        )
+        self.assertEqual(
+            hw3.ethnicity_less_than(self.counties, "missing", 100.0),
+            []
+        )
+        self.assertEqual(
+            hw3.ethnicity_less_than([], ETHNICITY, 40.0),
+            []
+        )
+
+    def test_below_poverty_level_greater_than_matches(self):
+        self.assertEqual(
+            hw3.below_poverty_level_greater_than(self.counties, 20.0),
+            [self.second]
+        )
+
+    def test_below_poverty_level_greater_than_boundary_or_empty(self):
+        self.assertEqual(
+            hw3.below_poverty_level_greater_than(self.counties, 30.0),
+            []
+        )
+        self.assertEqual(
+            hw3.below_poverty_level_greater_than([], 20.0),
+            []
+        )
+
+    def test_below_poverty_level_less_than_matches(self):
+        self.assertEqual(
+            hw3.below_poverty_level_less_than(self.counties, 20.0),
+            [self.first]
+        )
+
+    def test_below_poverty_level_less_than_boundary_or_empty(self):
+        self.assertEqual(
+            hw3.below_poverty_level_less_than(self.counties, 10.0),
+            []
+        )
+        self.assertEqual(
+            hw3.below_poverty_level_less_than([], 20.0),
+            []
+        )
+
+    # Additional check for original objects and unchanged input.
+
+    def test_filter_order_identity_and_input_unchanged(self):
+        before = copy.deepcopy(
+            [county.__dict__ for county in self.counties]
+        )
+
+        result = hw3.education_greater_than(
+            self.counties, EDUCATION, 0.0
+        )
+
+        self.assertIsNot(result, self.counties)
+        self.assertIs(result[0], self.first)
+        self.assertIs(result[1], self.second)
+        self.assertEqual(
+            [county.__dict__ for county in self.counties],
+            before
+        )
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-
